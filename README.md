@@ -18,23 +18,19 @@ AgentFA 是一个 Windows 桌面应用，把 [Qwen Code](https://github.com/Qwen
 - **开箱即用**：自带 Node.js / Python 运行时与全部 MCP 依赖（安装包约 400 MB），目标机**无需安装任何开发环境**
 - **对话驱动工科软件**：通过 MCP（Model Context Protocol）桥接 10+ 种工科软件，AI 直接调用其 API 完成操作
 - **自动注册**：安装后首次启动自动把全部工具注册进 AI 运行时，二次启动零写入、不打扰已有配置
-- **离线授权**：机器码绑定 + 免码试用 30 天 + 长期授权码，全程不需要联网验证
-- **稳定后台**：内置 AI 服务守护进程（健康检查 / 自动重试 / 端口稳定 / 干净退出），只监听本机 127.0.0.1
 
 ## 系统要求
 
 - Windows 10 / 11（x64）
 - 部分工具桥需要对应宿主软件已安装并运行（见下表）
-- 无需管理员权限（当前用户级安装）
+
 
 ## 安装与首次使用
 
-1. 下载 `QwenApp-x.x.x-setup.exe`，双击安装（可选安装目录）
-2. 首次启动进入激活页：**复制机器码**申请授权码，或点「试用 30 天」直接开始
-3. 进入主界面后，在设置中配置你的**模型 API Key**（一次即可，自动保存）
+1. 下载 `AgentFA-setup.exe`，双击安装（可选安装目录）
+2. 首次启动自动完成环境就绪检查（运行时随包自带，无需联网装配）
+3. 在设置中配置你的**模型 API Key**（一次即可，自动保存在本机）
 4. **新建会话**——全部随包工具已自动注册，直接对话使用
-
-> 试用从点击那一刻起算 30 个自然日，与开关机无关；到期后粘贴长期授权码可继续使用，数据不丢。
 
 ## 内置工具桥
 
@@ -54,6 +50,13 @@ AgentFA 是一个 Windows 桌面应用，把 [Qwen Code](https://github.com/Qwen
 > 每台机器的差异项（如 CODESYS 安装路径）集中在 `%APPDATA%\qwenapp\mcp-local.json`，应用只读不覆盖；改完点菜单「重建 MCP 配置」即可生效。
 > 工具**执行**需要对应宿主软件已安装并运行；未安装的软件不影响其他工具使用。
 
+### AutoCAD 插件加载（autocadlisp/）
+
+`autocadlisp/` 是 AutoCAD 桥运行所需的 LISP 插件（`mcp_dispatch.lsp` 为命令调度入口，`attribute_tools.lsp` 提供属性工具）。使用 AutoCAD 桥前需将其加载进 AutoCAD：
+
+1. 将 `autocadlisp\` 目录加入 AutoCAD 的**受信任路径**（选项 → 文件 → 受信任的位置）
+2. 在 AutoCAD 命令行执行一次：`(load "…\autocadlisp\mcp_dispatch.lsp")`，或把该行加入启动套件实现自动加载
+
 ## 目录与文件
 
 | 位置 | 内容 |
@@ -62,7 +65,7 @@ AgentFA 是一个 Windows 桌面应用，把 [Qwen Code](https://github.com/Qwen
 | `%APPDATA%\qwenapp\mcp-local.json` | 每台机器的 MCP 可变项（应用只读） |
 | `%APPDATA%\qwenapp\logs\` | 运行日志（daemon.log / mcp-sync.log），排错先看这里 |
 | `~\.qwen\settings.json` | AI 运行时配置（模型 Key / MCP 清单），与命令行 qwen 共用 |
-| `%LOCALAPPDATA%\Programs\Qwen App\` | 安装目录（含自带运行时） |
+| `%LOCALAPPDATA%\Programs\AgentFA\` | 安装目录（含自带运行时） |
 
 ## 常见问题
 
@@ -72,23 +75,21 @@ AgentFA 是一个 Windows 桌面应用，把 [Qwen Code](https://github.com/Qwen
 | 某工具执行报错 | 确认对应宿主软件已安装并运行；仍失败看 `logs\mcp-sync.log` 与 `daemon.log` |
 | 提示缺少 mcp-local 字段 | 打开 `%APPDATA%\qwenapp\mcp-local.json` 按提示补填，再点「重建 MCP 配置」 |
 | 对话中切换页面报 Failed to fetch | 已内置自愈；若复现，抓 `logs\daemon.log` 反馈 |
-| 卸载后想彻底清除试用记录 | `reg delete HKCU\Software\QwenApp /f` 并删除 `%PROGRAMDATA%\QwenApp` |
 
 ## 从源码构建
 
 ```bash
-git clone <本仓库> && cd AgentFA
+git clone https://github.com/XDDHPP/AgentFA.git && cd AgentFA
 npm install          # 国内网络自动走 npmmirror（仓库内置 .npmrc）
 npm run build        # TypeScript 编译
 npm run smoke        # 端到端回归（需已装配随包运行时）
 npm run vendor       # 装配便携 node/python/qwen 运行时到 resources/runtime
-npm run dist         # 产出 dist-electron/QwenApp-setup.exe
+npm run dist         # 产出 dist-electron/AgentFA-setup.exe
 ```
 
-技术栈：TypeScript + Electron + [@qwen-code/qwen-code](https://www.npmjs.com/package/@qwen-code/qwen-code)（AI 运行时）+ 自研 MCP 桥接层。运行时/依赖全部钉死版本，任意时间重建产物一致；详见 [`doc/`](doc) 目录的复现手册。
+技术栈：TypeScript + Electron + [@qwen-code/qwen-code](https://www.npmjs.com/package/@qwen-code/qwen-code)（AI 运行时）+ 自研 MCP 桥接层。运行时/依赖全部钉死版本，任意时间重建产物一致。
 
 ## 安全说明
 
 - 模型 API Key 只保存在本机 `~\.qwen\settings.json`，**不进安装包、不上传**
-- 应用不写系统 PATH、不装全局包；除自身目录与授权锚点外零写入
-- 授权采用 Ed25519 离线签名：公钥编译进应用，私钥永不入仓库；授权码被改任意字符即失效
+- 应用不写系统 PATH、不装全局包；除自身目录外零写入
